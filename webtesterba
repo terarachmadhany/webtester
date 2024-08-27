@@ -1,0 +1,68 @@
+from flask import Flask, render_template, request, redirect, url_for, send_file
+import pandas as pd
+import os
+
+app = Flask(__name__)
+
+# Path to the Excel file where data will be stored
+file_path = 'perawatan_terminal.xlsx'
+
+# Function to save data to Excel
+def save_to_excel(data, file_path):
+    df = pd.DataFrame([data])
+    if not os.path.exists(file_path):
+        df.to_excel(file_path, index=False)
+    else:
+        with pd.ExcelWriter(file_path, mode='a', engine='openpyxl', if_sheet_exists='overlay') as writer:
+            df.to_excel(writer, index=False, header=writer.sheets['Sheet1'].max_row == 0)
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        # Get form data
+        terminal = request.form['terminal']
+        lokasi = request.form['lokasi']
+        alamat = request.form['alamat']
+        hari = request.form['hari']
+        tanggal = request.form['tanggal']
+        waktu_masuk = request.form['waktu_masuk']
+        waktu_keluar = request.form['waktu_keluar']
+        pic = request.form['pic']
+        no_indihome = request.form['no_indihome']
+        pc_server = int(request.form['pc_server'])
+        pc_client = int(request.form['pc_client'])
+        ups = int(request.form['ups'])
+        switch_hub = int(request.form['switch_hub'])
+        routerboard = int(request.form['routerboard'])
+
+        # Create a dictionary with the data
+        data = {
+            "Terminal": terminal,
+            "Lokasi": lokasi,
+            "Alamat": alamat,
+            "Hari": hari,
+            "Tanggal": tanggal,
+            "Waktu Masuk": waktu_masuk,
+            "Waktu Keluar": waktu_keluar,
+            "PIC": pic,
+            "No Indihome": no_indihome,
+            "PC Server": pc_server,
+            "PC Client": pc_client,
+            "UPS": ups,
+            "Switch Hub": switch_hub,
+            "Routerboard": routerboard
+        }
+
+        # Save the data to the Excel file
+        save_to_excel(data, file_path)
+
+        return redirect(url_for('index'))
+
+    return render_template('index.html')
+
+@app.route('/download')
+def download_file():
+    return send_file(file_path, as_attachment=True)
+
+if __name__ == "__main__":
+    app.run(debug=True)
